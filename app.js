@@ -2,11 +2,17 @@ const searchForm = document.getElementById('search-form');
 const searchInput = document.getElementById('search-input');
 const searchType = document.getElementById('search-type');
 const resultsDiv = document.getElementById('results');
+const paginationDiv = document.querySelector('.pagination');
 const modal = document.getElementById('modal');
 const modalDetails = document.getElementById('modal-details');
 
+const booksPerPage = 10;
+let currentPage = 1;
+let books = [];
+
 searchForm.addEventListener('submit', async (e) => {
   e.preventDefault();
+  currentPage = 1;
 
   const query = searchInput.value.trim();
   const type = searchType.value;
@@ -41,22 +47,28 @@ searchForm.addEventListener('submit', async (e) => {
     if (!data.docs) {
       throw new Error('No se encontraron libros con ese término');
     }
-    displayResults(data.docs);
+    books = data.docs;
+    displayResults();
+    displayPagination();
   } catch (error) {
     resultsDiv.innerHTML = `<p>${error.message}. Por favor, intenta de nuevo.</p>`;
     console.error(error);
   }
 });
 
-function displayResults(books) {
+function displayResults() {
   resultsDiv.innerHTML = '';
-
+  
   if (books.length === 0) {
     resultsDiv.innerHTML = '<p>No se encontraron libros.</p>';
     return;
   }
+  
+  const start = (currentPage - 1) * booksPerPage;
+  const end = start + booksPerPage;
+  const paginatedBooks = books.slice(start, end);
 
-  books.forEach((book) => {
+  paginatedBooks.forEach((book) => {
     const bookElement = document.createElement('div');
     bookElement.classList.add('book');
 
@@ -74,6 +86,31 @@ function displayResults(books) {
 
     resultsDiv.appendChild(bookElement);
   });
+}
+
+function displayPagination() {
+  paginationDiv.innerHTML = '';
+  const totalPages = Math.ceil(books.length / booksPerPage);
+  
+  for (let i = 1; i <= totalPages; i++) {
+    const pageItem = document.createElement('li');
+    pageItem.classList.add('page-item');
+    if (i === currentPage) pageItem.classList.add('active');
+
+    const pageLink = document.createElement('a');
+    pageLink.classList.add('page-link');
+    pageLink.href = '#';
+    pageLink.textContent = i;
+    pageLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      currentPage = i;
+      displayResults();
+      displayPagination();
+    });
+
+    pageItem.appendChild(pageLink);
+    paginationDiv.appendChild(pageItem);
+  }
 }
 
 function showDetails(book) {
